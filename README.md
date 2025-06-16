@@ -25,7 +25,7 @@ cd target_vk
 ```
 2. Получите изменения:
 ```
-git pull origin master
+git pull origin main
 ```
 
 ### Создание окружения и установка зависимостей
