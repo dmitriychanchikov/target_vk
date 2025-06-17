@@ -305,6 +305,7 @@ def process_redact_note(driver, ads_data):
             return False
         if not upload_photo(driver, ads_data['photo_path']):
             return False
+        time.sleep(SLEEP_TIME)
 
         if not refresh_link(driver):
             return False
