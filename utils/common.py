@@ -329,14 +329,14 @@ def replace_html_safely(driver, element, new_html):
         print(f"Ошибка замены текста: {str(e)}")
         return False
 
-# def press_escape(driver):
-#     try:
-#         ActionChains(driver).send_keys(Keys.ESCAPE).perform()
-#         time.sleep(SLEEP_TIME)
-#         return True
-#     except Exception as e:
-#         print(f"Ошибка при нажатии клавиши ESCAPE: {str(e)}")
-#         return False
+def press_escape(driver):
+    try:
+        ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+        time.sleep(SLEEP_TIME)
+        return True
+    except Exception as e:
+        print(f"Ошибка при нажатии клавиши ESCAPE: {str(e)}")
+        return False
 
 # def click_by_coordinates(driver, x, y):
 #     try:

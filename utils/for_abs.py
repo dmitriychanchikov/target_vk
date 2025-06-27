@@ -7,7 +7,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from settings.config import SLEEP_TIME, WAIT_TIME
 from utils.common import (
     click_safely,
-    insert_value_safely
+    insert_value_safely,
+    press_escape
 )
 
 
@@ -73,4 +74,30 @@ def click_run_task(driver):
         
     except Exception as e:
         print(f"Ошибка при нажатии кнопки 'Запустить': {str(e)}")
+        return False
+
+def find_run_error(driver):
+    try:
+        error_box = WebDriverWait(driver, WAIT_TIME * 0.5).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "box_layout"))
+        )
+        
+        try:
+            error_title_str = error_box.find_element(By.XPATH, ".//div[@data-testid='box_title_text']").text
+            error_text_str = error_box.find_element(By.XPATH, ".//li").text
+            print(f"{error_title_str}:\n\t{error_text_str}")
+        except:
+            print("Не удалось извлечь текст ошибки")
+
+        try:
+            close_button = error_box.find_element(By.CLASS_NAME, "box_x_button")
+            if not click_safely(close_button):
+                raise
+        except:
+            if not press_escape(driver):
+                driver.refresh()
+        
+        return True
+
+    except:
         return False

@@ -8,11 +8,12 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from settings.config import SLEEP_TIME, WAIT_TIME
+from settings.config import ATTEMPTS, SLEEP_TIME, WAIT_TIME
 from utils.common import (
     click_safely,
     insert_value_safely,
-    replace_html_safely
+    replace_html_safely,
+    press_escape
 )
 
 
@@ -193,7 +194,7 @@ def resize_sign(driver):
             .release()\
             .perform()
             
-        time.sleep(SLEEP_TIME)
+        time.sleep(SLEEP_TIME * 0.5)
         
         ActionChains(driver)\
             .move_to_element(handles['se'])\
@@ -213,15 +214,28 @@ def resize_sign(driver):
         print(f"Ошибка при изменении размеров знака: {str(e)}")
         return False
 
+def find_sign_error(driver):
+    try:
+        WebDriverWait(driver, WAIT_TIME * 0.5).until(
+            EC.presence_of_element_located((By.XPATH, ".//div[@id='owner_photo_error']"))
+        )
+        print("Ошибка сохранения знака")
+        return True
+
+    except:
+        return False
+
 def save_sign(driver):
     try:
-        edit_post_button = WebDriverWait(driver, WAIT_TIME).until(
+        save_button = WebDriverWait(driver, WAIT_TIME).until(
             EC.element_to_be_clickable((By.XPATH, ".//button[contains(@onclick, 'OwnerPhoto.editDone')]"))
         )
-        if not click_safely(edit_post_button):
+        if not click_safely(save_button):
             print("Не удалось нажать кнопку сохранения знака")
             return False
-        print("Знак успешно сохранен")
+        print("Кнопка 'Сохранить изменения' успешно нажата")
+        if find_sign_error(driver):
+            return False
         return True
     
     except TimeoutException:
@@ -229,9 +243,61 @@ def save_sign(driver):
         return False
         
     except Exception as e:
-        print(f"Ошибка сохранения знкака: {str(e)}")
+        print(f"Ошибка сохранения знака: {str(e)}")
+        return False
+    
+def close_sign_box(driver):
+    try:
+        sign_box = WebDriverWait(driver, WAIT_TIME * 0.5).until(
+            EC.presence_of_element_located((
+                By.XPATH, "//div[contains(@class, 'box_layout') and contains(., 'Загрузка иллюстрации для ссылки')]"
+            ))
+        )
+        close_button = sign_box.find_element(By.CLASS_NAME, "box_x_button")
+        if not click_safely(close_button):
+            print("Не удалось нажать кнопку 'Закрыть (Х)'")
+            return False
+        print("Кнопка 'Закрыть (Х)' успешно нажата")
+        return True
+    
+    except TimeoutException:
+        print("Не удалось найти кнопку 'Закрыть (Х)'")
+        return False
+        
+    except Exception as e:
+        print(f"Ошибка закрытия окна: {str(e)}")
         return False
 
+def process_sign(driver, ads_data):
+    attempts = 0
+
+    while attempts <= ATTEMPTS:
+        if attempts > 0:
+            print(f"Попытка №{attempts} повторного добавления и сохранения знака")
+
+        if not click_add_sign(driver):
+            return False
+        if not upload_sign(driver, ads_data['sign_path']):
+            return False
+        if not resize_sign(driver):
+            return False
+        
+        if not save_sign(driver):
+            time.sleep(WAIT_TIME)
+            print(f"Попытка повторного сохранения знака")
+
+            if not save_sign(driver):
+                if not close_sign_box(driver):
+                    if not press_escape(driver):
+                        return False
+                attempts += 1
+                continue
+
+        print("Знак успешно сохранен")
+        return True
+
+    print(f"Не удалось запустить задачу после {ATTEMPTS} попыток")
+    return False
 
 def change_link_message(driver, message):
     try:
@@ -276,18 +342,6 @@ def delete_link_button(driver):
         return False
 
 
-def find_note_error(driver):
-    try:
-        error_area = WebDriverWait(driver, SLEEP_TIME).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "wpe_error.error"))
-        )
-        print(f"Найдена ошибка: '{error_area.text}'")
-        return True
-    
-    except:
-        return False
-
-
 # Main functions
 
 def process_redact_note(driver, ads_data):
@@ -311,17 +365,12 @@ def process_redact_note(driver, ads_data):
             return False
         time.sleep(SLEEP_TIME)
 
-        if not click_add_sign(driver):
-            return False
-        if not upload_sign(driver, ads_data['sign_path']):
-            return False
-        if not resize_sign(driver):
-            return False
-        if not save_sign(driver):
+        if not process_sign(driver, ads_data):
             return False
 
         if not change_link_message(driver, ads_data['message']):
-            return False
+                # TODO: find_sign_error
+                return False
         if not delete_link_button(driver):
             return False
         return True
@@ -331,7 +380,18 @@ def process_redact_note(driver, ads_data):
         return False
 
 
-def click_save_note(driver):
+def find_note_error(driver):
+    try:
+        error_area = WebDriverWait(driver, SLEEP_TIME).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "wpe_error.error"))
+        )
+        print(f"Найдена ошибка: '{error_area.text}'")
+        return True
+    
+    except:
+        return False
+
+def save_note(driver):
     try:
         save_btn = WebDriverWait(driver, WAIT_TIME).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "button#wpe_save"))
@@ -339,10 +399,10 @@ def click_save_note(driver):
         if not click_safely(save_btn):
             print("Не удалось нажать кнопку 'Сохранить'")
             return False
+        print("Кнопка 'Сохранить' успешно нажата")
         if find_note_error(driver):
             print("Сохранение записи отменено")
             return False
-        print("Кнопка 'Сохранить' успешно нажата")
         return True
     
     except TimeoutException:
@@ -353,7 +413,7 @@ def click_save_note(driver):
         print(f"Ошибка при нажатии кнопки 'Сохранить': {str(e)}")
         return False
 
-def click_cancel_note(driver):
+def cancel_save_note(driver):
     try:
         panel = WebDriverWait(driver, WAIT_TIME).until(
             EC.presence_of_element_located((By.CLASS_NAME, "box_controls_buttons.fl_r"))   
@@ -373,4 +433,16 @@ def click_cancel_note(driver):
         
     except Exception as e:
         print(f"Ошибка при нажатии кнопки 'Отмена': {str(e)}")
+        return False
+
+
+def find_captcha(driver):
+    try:
+        captcha_box = WebDriverWait(driver, SLEEP_TIME).until(
+            EC.visibility_of_element_located((By.XPATH, ".//div[@data-test-id='captcha-widget']"))
+        )
+        print(f"НАЙДЕНА КАПЧА! ПРОЙДИТЕ ВРУЧНУЮ!")
+        return True
+    
+    except:
         return False
