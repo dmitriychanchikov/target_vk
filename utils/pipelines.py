@@ -17,7 +17,8 @@ from utils.for_ad import (
     click_redact_note,
     click_save_ad,
     click_cancel_ad,
-    find_ad_error
+    find_ad_error,
+    find_min_limit_error
 )
 from utils.for_note import (
     save_note,
@@ -95,6 +96,8 @@ def pipeline_redact_ad(driver, abs_data):
 
     while attempts <= ATTEMPTS:
         try:
+            min_limit_error = False
+
             if attempts > 0:
                 time.sleep(WAIT_TIME)
                 if need_reload:
@@ -124,13 +127,19 @@ def pipeline_redact_ad(driver, abs_data):
                 if not click_cancel_ad(driver):
                     need_reload = True
                 continue
+            if find_min_limit_error(driver):
+                min_limit_error = True
+                click_cancel_ad(driver)
             url = check_and_get_new_url(driver, redact_url)
             if url != abs_data['url']:
                 attempts += 1
                 need_reload = True
                 continue
+            if min_limit_error:
+                print("Объявление не сохранено, произошел возврат на исходную страницу")
+                return True, min_limit_error
             print("Объявление успешно сохранено, произошел возврат на исходную страницу")
-            return True
+            return True, min_limit_error
         
         except Exception as e:
             if attempts >= ATTEMPTS:
@@ -140,10 +149,10 @@ def pipeline_redact_ad(driver, abs_data):
             need_reload = True
 
     print(f"Не удалось отредактировать объявление после {ATTEMPTS} попыток")
-    return False
+    return False, min_limit_error
 
 
-def pipeline_run_task(driver, abs_data):
+def pipeline_run_task(driver, abs_data, set_min_limit_error=False):
     attempts = 0
 
     while attempts <= ATTEMPTS:
@@ -153,6 +162,14 @@ def pipeline_run_task(driver, abs_data):
                 if not load_website(driver, abs_data['url']):
                     return False
                 print(f"Попытка №{attempts} повторного запуска задачи...")
+            
+            if set_min_limit_error:
+                new_name = abs_data['name'] + ' (маленькая аудитория)'
+                if not change_task_name(driver, new_name):
+                    attempts += 1
+                    continue
+                print("Объявление не запущено, задача переименована")
+                return True
 
             if not change_task_name(driver, abs_data['name']):
                 attempts += 1
@@ -164,7 +181,9 @@ def pipeline_run_task(driver, abs_data):
         
             if find_run_error(driver):
                 new_name = abs_data['name'] + ' +'
-                change_task_name(driver, new_name)
+                if not change_task_name(driver, new_name):
+                    attempts += 1
+                    continue
                 print("Объявление не запущено, задача переименована")
             else:
                 print("Задача успешно запущена")
@@ -193,11 +212,12 @@ def main_pipeline(driver, abs_data):
                 attempts += 1
                 continue
 
-            if not pipeline_redact_ad(driver, abs_data):
+            pipeline_redact_ad_statuses = pipeline_redact_ad(driver, abs_data)
+            if not pipeline_redact_ad_statuses[0]:
                 attempts += 1
                 continue
 
-            if not pipeline_run_task(driver, abs_data):
+            if not pipeline_run_task(driver, abs_data, pipeline_redact_ad_statuses[1]):
                 attempts += 1
                 continue
             print(f"Задача '{abs_data['name']}' успешно обработана")

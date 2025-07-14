@@ -41,6 +41,19 @@ def find_ad_error(driver):
     
     except:
         return False
+    
+def find_min_limit_error(driver):
+    try:
+        error_area = WebDriverWait(driver, SLEEP_TIME).until(
+            EC.presence_of_element_located((By.ID, "ads_edit_error_targeting"))
+        )
+        if "unshown" in error_area.get_attribute("class"):
+            return False
+        print(f"Найдена ошибка: '{error_area.text}'")
+        return True
+    
+    except:
+        return False
 
 
 def click_save_ad(driver):
