@@ -1,7 +1,9 @@
 # Python 3.11
 
+opencv-python==4.11.0.86
 openpyxl
 pandas
+pillow==11.3.0
 python-dotenv
 selenium
 webdriver_manager
