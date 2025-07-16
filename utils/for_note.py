@@ -371,6 +371,8 @@ def process_redact_note(driver, ads_data):
         if not change_link_message(driver, ads_data['message']):
                 # TODO: find_sign_error
                 return False
+        time.sleep(SLEEP_TIME)
+
         if not delete_link_button(driver):
             return False
         return True
