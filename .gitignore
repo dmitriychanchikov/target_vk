@@ -1,7 +1,8 @@
 /.venv
-/data
+*data/
 *cache*
 *test*
+*copy*
 *.zip
 *.docx
 *.html

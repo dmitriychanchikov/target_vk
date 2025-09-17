@@ -3,8 +3,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+import __init__
 from settings.config import SLEEP_TIME, WAIT_TIME
-from utils.common import click_safely
+from common_utils.driver import click_safely
 
 
 # Main functions

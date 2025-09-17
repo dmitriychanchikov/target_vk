@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta
 from dateutil import parser
 
-from settings.config import *
-from utils.common import *
-
+import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+
+import __init__
+from settings.config import *
+from common_utils.driver import *
 
 
 months = {
@@ -15,25 +17,33 @@ months = {
 }
 
 def parse_date(date_str):
-    if 'сегодня' in date_str:
-        parsed_date = datetime.now().date()
+    try:
+        if date_str == '—':
+            parsed_date = datetime(1970, 1, 1).date()
 
-    elif 'вчера' in date_str:
-        parsed_date = datetime.now().date() - timedelta(days=1)
+        elif 'сегодня' in date_str:
+            parsed_date = datetime.now().date()
 
-    else:
-        if ' в ' in date_str:  # Формат '15 мая в 19:17'
-            current_year = datetime.now().year
-            date_str = f"{date_str.split(' в ')[0]} {current_year}"  # Добавляем текущий год
+        elif 'вчера' in date_str:
+            parsed_date = datetime.now().date() - timedelta(days=1)
 
-        for ru_month, en_month in months.items():
-            if ru_month in date_str:
-                date_str = date_str.replace(ru_month, en_month)
-                break
-            
-        parsed_date = parser.parse(date_str, dayfirst=True).date()
+        else:
+            if ' в ' in date_str:  # Формат '15 мая в 19:17'
+                current_year = datetime.now().year
+                date_str = f"{date_str.split(' в ')[0]} {current_year}"  # Добавляем текущий год
 
-    return parsed_date
+            for ru_month, en_month in months.items():
+                if ru_month in date_str:
+                    date_str = date_str.replace(ru_month, en_month)
+                    break
+                
+            parsed_date = parser.parse(date_str, dayfirst=True).date()
+
+        return parsed_date
+    
+    except Exception as e:
+        print(f"Не удалось распарсить дату: '{date_str}'. Ошибка: {str(e)}")
+        return None
 
 
 def find_error(driver):

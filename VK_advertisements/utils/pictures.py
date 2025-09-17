@@ -176,5 +176,3 @@ def pipeline(names, template_path, font_path, photo_dir):
 
         cv2.imwrite(f'{photo_dir}/temp.png', new_image)
         os.rename(f'{photo_dir}/temp.png', f'{photo_dir}/{name}.png')
-
-

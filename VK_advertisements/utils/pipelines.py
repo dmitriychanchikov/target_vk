@@ -1,30 +1,31 @@
 import sys
 import time
 
+import __init__
 from settings.config import ATTEMPTS, CAPTCHA_TIME, WAIT_TIME
-from utils.common import (
+from common_utils.driver import (
     check_and_get_new_url,
     load_website,
     reload_website,
 )
-from utils.for_abs import (
-    click_redact_ad,
-    click_run_task,
-    change_task_name,
-    find_run_error
-)
-from utils.for_ad import (
+from utils.ad import (
     click_redact_note,
     click_save_ad,
     click_cancel_ad,
     find_ad_error,
     find_min_limit_error
 )
-from utils.for_note import (
+from utils.note import (
     save_note,
     cancel_save_note,
     process_redact_note,
     find_captcha
+)
+from utils.task import (
+    click_redact_ad,
+    click_run_task,
+    change_task_name,
+    find_run_error
 )
 
 

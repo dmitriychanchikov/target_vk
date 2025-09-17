@@ -8,8 +8,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+import __init__
 from settings.config import ATTEMPTS, SLEEP_TIME, WAIT_TIME
-from utils.common import (
+from common_utils.driver import (
     click_safely,
     insert_value_safely,
     replace_html_safely,
