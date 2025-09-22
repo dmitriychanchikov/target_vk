@@ -170,7 +170,7 @@ def pipeline_stop_task(driver, abs_data):
             if task_status is None:
                 attempts += 1
                 continue
-            if task_status == 'Запущено' or task_status == 'Запускается':
+            if task_status == 'Запущено' or task_status == 'Запускается' or task_status == 'Проверяется':
                 if not click_stop_task(driver):
                     attempts += 1
                     continue   
