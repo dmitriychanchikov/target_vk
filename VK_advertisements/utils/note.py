@@ -48,7 +48,7 @@ def replace_name_in_text(driver, pattern, new_name):
 
 def close_photo(driver):
     try:
-        close_button = WebDriverWait(driver, WAIT_TIME).until(
+        close_button = WebDriverWait(driver, SLEEP_TIME*2).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "div.ui_thumb_x_button._close_btn"))
         )
         if not click_safely(close_button):
