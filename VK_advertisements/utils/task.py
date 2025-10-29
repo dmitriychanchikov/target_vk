@@ -58,6 +58,22 @@ def change_task_name(driver, name):
         print(f"Ошибка изменения имени задачи: {str(e)}")
         return False
 
+
+def get_task_status(driver):
+    try:
+        task_status_element = WebDriverWait(driver, WAIT_TIME).until(
+            EC.presence_of_element_located((By.XPATH, ".//p[contains(@class, 'ads_general_info_status_text')]"))
+        )
+        return task_status_element.text
+    
+    except TimeoutException:
+        print("Не удалось получить статус объявления")
+        return None
+        
+    except Exception as e:
+        print(f"Ошибка при получении статуса объявления': {str(e)}")
+        return None
+
 def click_run_task(driver):
     try:
         run_button = WebDriverWait(driver, WAIT_TIME).until(
@@ -76,6 +92,26 @@ def click_run_task(driver):
     except Exception as e:
         print(f"Ошибка при нажатии кнопки 'Запустить': {str(e)}")
         return False
+
+def click_stop_task(driver):
+    try:
+        stop_button = WebDriverWait(driver, WAIT_TIME).until(
+            EC.element_to_be_clickable((By.XPATH, ".//button[contains(@onclick, 'Ads.changeStatus') and contains(text(), 'Остановить')]"))
+        )
+        if not click_safely(stop_button):
+            print("Не удалось нажать кнопку 'Остановить'")
+            return False
+        print("Кнопка 'Остановить' успешно нажата")
+        return True
+    
+    except TimeoutException:
+        print("Не удалось найти кнопку 'Остановить'")
+        return False
+        
+    except Exception as e:
+        print(f"Ошибка при нажатии кнопки 'Остановить': {str(e)}")
+        return False
+
 
 def find_run_error(driver):
     try:

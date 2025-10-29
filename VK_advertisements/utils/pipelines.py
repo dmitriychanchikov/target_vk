@@ -9,23 +9,25 @@ from common_utils.driver import (
     reload_website,
 )
 from utils.ad import (
+    click_cancel_ad,
     click_redact_note,
     click_save_ad,
-    click_cancel_ad,
     find_ad_error,
     find_min_limit_error
 )
 from utils.note import (
-    save_note,
     cancel_save_note,
+    find_captcha,
     process_redact_note,
-    find_captcha
+    save_note
 )
 from utils.task import (
+    change_task_name,
     click_redact_ad,
     click_run_task,
-    change_task_name,
-    find_run_error
+    click_stop_task,
+    find_run_error,
+    get_task_status
 )
 
 
@@ -153,6 +155,37 @@ def pipeline_redact_ad(driver, abs_data):
     return False, min_limit_error
 
 
+def pipeline_stop_task(driver, abs_data):
+    attempts = 0
+
+    while attempts <= ATTEMPTS:
+        try:
+            if attempts > 0:
+                time.sleep(WAIT_TIME)
+                if not load_website(driver, abs_data['url']):
+                    return False
+                print(f"Попытка №{attempts} повторной остановки задачи...")
+            
+            task_status = get_task_status(driver)
+            if task_status is None:
+                attempts += 1
+                continue
+            if task_status == 'Запущено' or task_status == 'Запускается' or task_status == 'Проверяется':
+                if not click_stop_task(driver):
+                    attempts += 1
+                    continue   
+            return True
+        
+        except Exception as e:
+            if attempts >= ATTEMPTS:
+                break
+            print(f"Не удалось остановить задачу: {str(e)}")
+            attempts += 1
+
+    print(f"Не удалось остановить задачу после {ATTEMPTS} попыток")
+    return False
+
+
 def pipeline_run_task(driver, abs_data, set_min_limit_error=False):
     attempts = 0
 
@@ -175,6 +208,15 @@ def pipeline_run_task(driver, abs_data, set_min_limit_error=False):
             if not change_task_name(driver, abs_data['name']):
                 attempts += 1
                 continue
+
+            task_status = get_task_status(driver)
+            if task_status is None:
+                attempts += 1
+                continue
+            if task_status != 'Остановлено':
+                if not pipeline_stop_task(driver, abs_data):
+                    attempts += 1
+                    continue
 
             if not click_run_task(driver):
                 attempts += 1
@@ -210,6 +252,10 @@ def main_pipeline(driver, abs_data):
                 print(f"Попытка №{attempts} повторной обработки задачи '{abs_data['name']}'...")
 
             if not load_website(driver, abs_data['url']):
+                attempts += 1
+                continue
+
+            if not pipeline_stop_task(driver, abs_data):
                 attempts += 1
                 continue
 

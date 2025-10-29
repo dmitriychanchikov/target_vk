@@ -1,7 +1,7 @@
 import re
 import time
 
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -48,22 +48,22 @@ def replace_name_in_text(driver, pattern, new_name):
 
 def close_photo(driver):
     try:
-        close_button = WebDriverWait(driver, WAIT_TIME).until(
+        close_button = WebDriverWait(driver, SLEEP_TIME*2).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "div.ui_thumb_x_button._close_btn"))
         )
         if not click_safely(close_button):
             print("Не удалось нажать на кнопку закрытия фотографии")
             return False
         print("Кнопка закрытия фотографии успешно нажата")
-        return True
-        
-    except TimeoutException:
+        return "closed"
+    
+    except (NoSuchElementException, TimeoutException):
         print("Не удалось найти кнопку закрытия фотографии")
-        return False
+        return "absent"
     
     except Exception as e:
         print(f"Ошибка при закрытии фотографии: {str(e)}")
-        return False
+        return "error"
     
 def close_link(driver):
     try:
@@ -351,7 +351,8 @@ def process_redact_note(driver, ads_data):
             if not replace_name_in_text(driver, ads_data['pattern'], ads_data['name']):
                 return False
 
-        if not close_photo(driver):
+        close_photo_status = close_photo(driver)
+        if close_photo_status == "error":
             return False
         if not close_link(driver):
             return False

@@ -1,5 +1,4 @@
 import os
-import json
 from datetime import datetime
 
 import pandas as pd
@@ -154,44 +153,76 @@ def process_input_data(input_dir, sign_path, message, pattern):
 
 # Output data
 
-def init_output_dir(input_dir):
-    """Создает выходную директорию и возвращает пути к файлам"""
-    output_dir = input_dir.replace('in', 'out')
-    os.makedirs(output_dir, exist_ok=True)
-    
-    timestamp = datetime.now().strftime('%H_%M_%S')
-    return (
-        f'{output_dir}/{timestamp}__success.json',
-        f'{output_dir}/{timestamp}__failure.json'
-    )
-
-def save_dict_to_json(data, filename):
+def init_output_dir(input_dir: str):
     """
-    Сохраняет данные в JSON файл в правильном формате.
-    Если файл существует - загружает его, обновляет данные и сохраняет.
-    Если нет - создает новый с данными в списке.
+    Создает выходную директорию и возвращает пути к CSV файлам
     """
     try:
-        # Переводим словарь в JSON строку и добавляем новую строку
-        with open(filename, 'a', encoding='utf-8') as f:
-            json_string = json.dumps(data, ensure_ascii=False)
-            f.write(json_string + '\n')
-    except (FileNotFoundError, json.JSONDecodeError):
-        # Если файла нет или он пустой/невалидный
-        raise Exception(f"Невозможно сохранить данные в файл {filename}")
+        output_dir = input_dir.replace('in', 'out')
+        os.makedirs(output_dir, exist_ok=True)
+        success_file = os.path.join(output_dir, 'success.csv')
+        failure_file = os.path.join(output_dir, 'failure.csv')
+        return success_file, failure_file
 
-def get_df_from_json(filename):
+    except Exception as e:
+        print(f"Ошибка при создании выходной директории: {str(e)}")
+        return False
+
+def save_dict_to_csv(data: dict, filename: str):
     """
-    Читает JSON Lines файл и возвращает pandas DataFrame.
+    Сохраняет одну запись (словарь) в CSV.
+    Если файл пустой или еще не существует, добавляет заголовки.
     """
     try:
-        data = []
-        # Чтение файла построчно
-        with open(filename, 'r', encoding='utf-8') as f:
-            for line in f:
-                if line.strip():  # Если строка не пустая
-                    data.append(json.loads(line))
-        return pd.DataFrame(data)
-    except (FileNotFoundError, json.JSONDecodeError):
-        # Если файла нет или он пустой/невалидный
-        raise Exception(f"Невозможно прочитать файл {filename}")
+        df = pd.DataFrame([data])  # превращаем словарь в dataframe из одной строки
+        file_exists = os.path.isfile(filename)
+
+        df.to_csv(filename, mode='a', index=False, header=not file_exists, encoding='utf-8-sig')
+        return True
+
+    except Exception as e:
+        print(f"Ошибка при сохранении словаря в {filename}: {e}")
+        return False
+
+def delete_dict_from_csv(data: dict, filename: str, key_field: str = "url"):
+    """
+    Удаляет строку из CSV по значению ключевого поля (по умолчанию 'url').
+    """
+    try:
+        if not os.path.exists(filename):
+            print(f"Файл {filename} не найден")
+            return False
+
+        df = pd.read_csv(filename, encoding='utf-8-sig')
+
+        # фильтруем — оставляем только те строки, у которых ключ не совпадает
+        initial_len = len(df)
+        df = df[df[key_field] != data[key_field]]
+
+        if len(df) == initial_len:
+            print(f"Запись с {key_field}={data[key_field]} не найдена")
+            return False
+
+        # сохраняем обратно
+        df.to_csv(filename, index=False, encoding='utf-8-sig')
+        print(f"Запись с {key_field}={data[key_field]} удалена")
+        return True
+
+    except Exception as e:
+        print(f"Ошибка при удалении записи из {filename}: {e}")
+        return False
+
+def get_df_from_csv(filename: str):
+    """
+    Читает CSV и возвращает pandas DataFrame.
+    """
+    try:
+        if not os.path.exists(filename):
+            print(f"Файл {filename} не найден")
+            return None
+
+        return pd.read_csv(filename, encoding='utf-8-sig')
+
+    except Exception as e:
+        print(f"Ошибка при чтении {filename}: {e}")
+        return None
