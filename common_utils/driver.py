@@ -43,13 +43,13 @@ def load_website(driver, url):
         return True
     except TimeoutException:
         print(f"Страница '{url}' не загрузилась за {WAIT_TIME} секунд")
-        return True
+        return False
     except WebDriverException as e:
         print(f"Ошибка при загрузке страницы: {str(e)}")
-        return True
+        return False
     except Exception as e:
         print(f"Неожиданная ошибка при загрузке страницы: {str(e)}")
-        return True
+        return False
 
 def reload_website(driver):
     try:
@@ -99,6 +99,40 @@ def shut_webdriver(driver):
         return False
     except Exception as e:
         print(f"Неожиданная ошибка при остановке браузера: {str(e)}")
+        return False
+    
+def open_new_tab(driver):
+    """
+    Открывает новую вкладку
+    
+    Returns:
+        bool: True если успешно, False при ошибке
+    """
+    try:
+        driver.execute_script("window.open('');")
+        time.sleep(SLEEP_TIME)
+        return True
+    except Exception as e:
+        print(f"Ошибка при открытии вкладки: {str(e)}")
+        return False
+
+def switch_to_tab(driver, tab_index=0):
+    """
+    Переключается на вкладку по индексу
+    
+    Args:
+        tab_index (int): Индекс вкладки (0 = первая)
+    
+    Returns:
+        bool: True если успешно, False при ошибке
+    """
+    try:
+        tabs = driver.window_handles
+        driver.switch_to.window(tabs[tab_index])
+        print(f"Переключено на вкладку {tabs.index(tabs[tab_index])}")
+        return True
+    except Exception as e:
+        print(f"Ошибка при переключении на вкладку {tabs.index(tabs[tab_index])}: {str(e)}")
         return False
 
 
