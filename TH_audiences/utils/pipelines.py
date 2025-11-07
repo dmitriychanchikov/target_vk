@@ -99,7 +99,7 @@ def inspect_data(
         single_equal_words = df[df[0].apply(is_all_same_chars)][0].tolist()
         to_delete['single_or_equal_chars'] = single_equal_words
 
-        print("\n🔹 Слова из одинаковых символов:")
+        print("\n🔹 Записи из одинаковых символов:")
         for w in single_equal_words:
             print(w)
 
@@ -114,7 +114,7 @@ def inspect_data(
                     yo_words.append(name)
         to_delete['surnames_with_yo'] = yo_words
 
-        print("\n🔹 Фамилии с 'ё', если есть вариант с 'е':")
+        print("\n🔹 Записи с 'ё', если есть вариант с 'е':")
         for w in yo_words:
             print(w)
 
